@@ -1,0 +1,16 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mock-app
+  namespace: demo
+  labels:
+    app.kubernetes.io/name: mock-app
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mock-app
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s

@@ -1,0 +1,71 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mock-app
+  namespace: demo
+  labels:
+    app.kubernetes.io/name: mock-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mock-app
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mock-app
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: mock-app
+          image: local/mock-observable-app:1.0.0
+          imagePullPolicy: Never
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: ALLOW_CRASH_ENDPOINT
+              value: "true"
+          resources:
+            requests:
+              cpu: 25m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+            readOnlyRootFilesystem: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mock-app
+  namespace: demo
+  labels:
+    app.kubernetes.io/name: mock-app
+spec:
+  selector:
+    app.kubernetes.io/name: mock-app
+  ports:
+    - name: http
+      port: 8080
+      targetPort: http

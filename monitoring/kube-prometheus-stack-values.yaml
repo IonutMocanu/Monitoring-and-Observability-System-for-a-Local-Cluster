@@ -1,0 +1,86 @@
+# Lightweight defaults suitable for a single-node k3s host or Raspberry Pi 5.
+# EmptyDir storage is intentionally used for a lab. See README.md for persistence.
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false
+
+grafana:
+  defaultDashboardsEnabled: true
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      searchNamespace: ALL
+    datasources:
+      enabled: true
+      defaultDatasourceEnabled: true
+      isDefaultDatasource: true
+      uid: prometheus
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 384Mi
+
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    scrapeInterval: 30s
+    evaluationInterval: 30s
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorNamespaceSelector: {}
+    ruleSelectorNilUsesHelmValues: false
+    ruleNamespaceSelector: {}
+    resources:
+      requests:
+        cpu: 150m
+        memory: 384Mi
+      limits:
+        cpu: "1"
+        memory: 1Gi
+
+alertmanager:
+  alertmanagerSpec:
+    configSecret: local-monitoring-alertmanager
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 192Mi
+
+prometheusOperator:
+  resources:
+    requests:
+      cpu: 50m
+      memory: 100Mi
+    limits:
+      cpu: 300m
+      memory: 300Mi
+
+kube-state-metrics:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 192Mi
+
+prometheus-node-exporter:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
