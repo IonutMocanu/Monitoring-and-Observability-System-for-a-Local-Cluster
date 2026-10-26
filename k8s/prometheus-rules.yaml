@@ -1,0 +1,46 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: local-cluster-alerts
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/part-of: local-observability
+spec:
+  groups:
+    - name: kubernetes-pod-health
+      rules:
+        - alert: PodContainerRestarted
+          expr: increase(kube_pod_container_status_restarts_total{namespace!~"kube-system|monitoring"}[5m]) > 0
+          for: 0m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Container restarted in {{ $labels.namespace }}/{{ $labels.pod }}"
+            description: "Container {{ $labels.container }} restarted during the last five minutes."
+
+        - alert: PodCrashLooping
+          expr: max_over_time(kube_pod_container_status_waiting_reason{reason="CrashLoopBackOff"}[5m]) >= 1
+          for: 2m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod is crash-looping in {{ $labels.namespace }}"
+            description: "Container {{ $labels.container }} in pod {{ $labels.pod }} has been in CrashLoopBackOff for two minutes."
+
+        - alert: PodCpuLimitOver80Percent
+          expr: |
+            (
+              sum by (namespace, pod, container) (
+                rate(container_cpu_usage_seconds_total{container!="",container!="POD"}[5m])
+              )
+              /
+              sum by (namespace, pod, container) (
+                kube_pod_container_resource_limits{resource="cpu",unit="core"} > 0
+              )
+            ) > 0.8
+          for: 5m
+          labels:
+            severity: warning
+          annotations:
+            summary: "High CPU in {{ $labels.namespace }}/{{ $labels.pod }}"
+            description: "Container {{ $labels.container }} has used more than 80% of its CPU limit for five minutes (current ratio: {{ $value | humanizePercentage }})."
